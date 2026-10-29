@@ -1,0 +1,588 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pingpong3D: Whole Table Tennis Matches in 3D from a Single Camera</title>
+<meta name="description" content="Pingpong3D turns an ordinary table tennis video, a TV broadcast or a phone by the court, into a 3D match you can view from any angle: both players&#x27; full-body motion, the ball&#x27;s flight and every landing point, lined up against professional players at the moment of contact.">
+<meta name="author" content="Mingyang Zhong">
+<link rel="canonical" href="https://pingpong3d.github.io/en/">
+<link rel="alternate" hreflang="zh-CN" href="https://pingpong3d.github.io/">
+<link rel="alternate" hreflang="en" href="https://pingpong3d.github.io/en/">
+<link rel="alternate" hreflang="x-default" href="https://pingpong3d.github.io/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Pingpong3D">
+<meta property="og:title" content="Pingpong3D: Whole Table Tennis Matches in 3D from a Single Camera">
+<meta property="og:description" content="Pingpong3D turns an ordinary table tennis video, a TV broadcast or a phone by the court, into a 3D match you can view from any angle: both players&#x27; full-body motion, the ball&#x27;s flight and every landing point, lined up against professional players at the moment of contact.">
+<meta property="og:url" content="https://pingpong3d.github.io/en/">
+<meta property="og:image" content="https://pingpong3d.github.io/media/og_en.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:locale" content="en_US">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#0B0D0A">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,400..800&family=IBM+Plex+Mono:wght@400;500&family=Noto+Sans+SC:wght@400;500;700&display=swap" media="print" onload="this.media='all'">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,400..800&family=IBM+Plex+Mono:wght@400;500&family=Noto+Sans+SC:wght@400;500;700&display=swap"></noscript>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "WebPage", "name": "Pingpong3D: Whole Table Tennis Matches in 3D from a Single Camera", "description": "Pingpong3D turns an ordinary table tennis video, a TV broadcast or a phone by the court, into a 3D match you can view from any angle: both players' full-body motion, the ball's flight and every landing point, lined up against professional players at the moment of contact.", "url": "https://pingpong3d.github.io/en/", "inLanguage": "en", "image": "https://pingpong3d.github.io/media/og_en.jpg", "author": {"@type": "Person", "name": "钟鸣洋", "alternateName": "Mingyang Zhong"}, "about": {"@type": "SoftwareApplication", "name": "Pingpong3D", "applicationCategory": "SportsApplication"}, "sameAs": ["https://www.youtube.com/watch?v=5e6fQDLpLy0"]}</script>
+<style>
+/* Layout: broadcast slate. Centered academic masthead (after the Vid2Player3D project page), footage on dark
+   "screens" with mono slate tags, a 680px reading column inside a 1180px stage. Lime is the ball: used once per view. */
+:root {
+  --paper: #F5F6F1;
+  --ink: #11140F;
+  --ink-2: #484F44;
+  --ink-3: #737B6E;
+  --rule: #DADFD2;
+  --chip: #EBEEE4;
+  --screen: #0D100C;
+  --screen-rule: #20251E;
+  --on-screen: #F2F4EE;
+  --lime: #CDF23C;
+  --lime-ink: #4C6800;
+  --on-lime: #11140F;
+  --f-display: "Archivo", "Noto Sans SC", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", system-ui, sans-serif;
+  --f-body: "Archivo", "Noto Sans SC", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", system-ui, sans-serif;
+  --f-mono: "IBM Plex Mono", "SFMono-Regular", Menlo, Consolas, "Noto Sans SC", monospace;
+  --stage: 1180px;
+  --read: 680px;
+  --radius: 12px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0B0D0A; --ink: #ECEFE6; --ink-2: #A9B0A2; --ink-3: #778070; --rule: #242922; --chip: #151912;
+    --screen: #050604; --screen-rule: #1C2119; --on-screen: #F2F4EE;
+    --lime: #CDF23C; --lime-ink: #CDF23C; --on-lime: #0B0D0A; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0B0D0A; --ink: #ECEFE6; --ink-2: #A9B0A2; --ink-3: #778070; --rule: #242922; --chip: #151912;
+  --screen: #050604; --screen-rule: #1C2119; --on-screen: #F2F4EE;
+  --lime: #CDF23C; --lime-ink: #CDF23C; --on-lime: #0B0D0A; color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font: 400 16.5px/1.72 var(--f-body);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 0 64px;
+}
+a { color: inherit; }
+img, video { max-width: 100%; }
+:focus-visible { outline: 2px solid var(--lime-ink); outline-offset: 3px; border-radius: 4px; }
+.mono { font-family: var(--f-mono); }
+.stage { max-width: var(--stage); margin-inline: auto; }
+.read { max-width: var(--read); margin-inline: auto; }
+
+/* top bar */
+.bar { max-width: var(--stage); margin-inline: auto; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-block: 18px; }
+.mark { display: inline-flex; align-items: center; gap: 9px; font: 700 15px/1 var(--f-display); font-stretch: 108%; letter-spacing: .01em; text-decoration: none; }
+.mark::before { content: ""; width: 10px; height: 10px; border-radius: 50%; background: var(--lime); box-shadow: 0 0 0 3px color-mix(in srgb, var(--lime) 28%, transparent); }
+.langs { display: inline-flex; border: 1px solid var(--rule); border-radius: 999px; padding: 3px; gap: 2px; }
+.langs button { appearance: none; border: 0; background: none; color: var(--ink-3); font: 600 13px/1 var(--f-body); padding: 7px 12px; border-radius: 999px; cursor: pointer; }
+.langs button[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
+
+/* masthead */
+.mast { text-align: center; padding-block: clamp(36px, 7vw, 84px) clamp(28px, 4vw, 44px); }
+.eyebrow { font: 500 12px/1.4 var(--f-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); margin: 0; }
+.mast h1 { margin: 18px auto 0; max-width: 940px; font: 640 clamp(30px, 5.2vw, 58px)/1.1 var(--f-display); font-stretch: 104%; letter-spacing: -.015em; text-wrap: balance; }
+.mast h1 .brand { font-weight: 800; }
+.tagline { margin: 18px 0 0; font-size: clamp(17px, 2.1vw, 21px); color: var(--ink-2); }
+.byline { margin: 28px 0 0; font-weight: 600; font-size: 17px; }
+.org { margin: 4px 0 0; font-size: 14px; color: var(--ink-3); }
+.links { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 26px; }
+.pill { display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding: 0 18px; border-radius: 999px; border: 1px solid var(--rule); text-decoration: none; font-weight: 600; font-size: 14.5px; transition: border-color .2s, background-color .2s; }
+.pill:hover { border-color: var(--ink-3); }
+.pill--primary { background: var(--lime); border-color: transparent; color: var(--on-lime); }
+.pill--primary:hover { border-color: transparent; background: color-mix(in srgb, var(--lime) 86%, var(--ink)); }
+.tri { width: 0; height: 0; border-style: solid; border-width: 5px 0 5px 8px; border-color: transparent transparent transparent currentColor; }
+
+/* screens: every piece of footage sits on one */
+.screen { position: relative; background: var(--screen); border: 1px solid var(--screen-rule); border-radius: var(--radius); overflow: hidden; }
+.screen video, .screen img { display: block; width: 100%; height: auto; }
+.screen.fit { aspect-ratio: 16 / 10; }
+.screen.fit video, .screen.fit img { height: 100%; object-fit: cover; }
+.vbtn { position: absolute; right: 12px; bottom: 12px; width: 34px; height: 34px; border-radius: 50%; border: 0; cursor: pointer;
+  background: color-mix(in srgb, var(--screen) 62%, transparent); color: var(--on-screen); display: grid; place-items: center; opacity: .0; transition: opacity .2s; }
+.screen:hover .vbtn, .vbtn:focus-visible, .vbtn:not(.is-playing) { opacity: 1; }
+.vbtn::before { content: ""; border-style: solid; border-width: 6px 0 6px 10px; border-color: transparent transparent transparent currentColor; margin-left: 3px; }
+.vbtn.is-playing::before { border: 0; width: 10px; height: 12px; margin: 0; background: linear-gradient(90deg, currentColor 0 3.5px, transparent 3.5px 6.5px, currentColor 6.5px 10px); }
+
+figure { margin: 0; }
+.slate { display: flex; align-items: baseline; gap: 8px; margin: 12px 0 0; font: 400 12px/1.5 var(--f-mono); letter-spacing: .03em; color: var(--ink-3); }
+.slate::before { content: ""; flex: none; width: 6px; height: 6px; border-radius: 50%; background: var(--lime-ink); transform: translateY(-1px); }
+
+/* hero */
+.hero { margin-top: 8px; }
+.phases { display: grid; grid-template-columns: 3.9fr 2.4fr 11.4fr; gap: 3px; margin-top: 12px; }
+.phase { appearance: none; border: 0; background: none; padding: 12px 0 0; text-align: left; cursor: pointer; color: var(--ink-3); font: 500 13.5px/1.4 var(--f-body); position: relative; min-width: 0; }
+.phase::before, .phase::after { content: ""; position: absolute; left: 0; top: 0; height: 2px; border-radius: 2px; }
+.phase::before { right: 0; background: var(--rule); }
+.phase::after { width: calc(var(--p, 0) * 100%); background: var(--ink); }
+.phase.on { color: var(--ink); }
+.phase.on::after { background: var(--lime-ink); }
+
+/* text sections */
+section { padding-block: clamp(64px, 9vw, 112px) 0; }
+h2 { margin: 0; font: 640 clamp(23px, 2.7vw, 31px)/1.25 var(--f-display); font-stretch: 102%; letter-spacing: -.01em; text-wrap: balance; }
+.read h2, .head h2 { padding-bottom: 14px; border-bottom: 1px solid var(--rule); margin-bottom: 22px; }
+.head .lead { max-width: 62ch; }
+p { margin: 0; }
+.read p + p { margin-top: 1em; }
+.lead { color: var(--ink-2); }
+
+.spec { display: grid; grid-template-columns: 6.5em minmax(0, 1fr); margin: 30px 0 0; border-top: 1px solid var(--rule); }
+.spec dt, .spec dd { margin: 0; padding: 12px 0; border-bottom: 1px solid var(--rule); }
+.spec dt { font: 500 12px/1.9 var(--f-mono); letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); }
+.spec dd { font-size: 15px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+
+/* video */
+.poster { display: block; position: relative; text-decoration: none; color: var(--on-screen); }
+.poster img { transition: transform .6s cubic-bezier(.2, .7, .2, 1); }
+.poster:hover img { transform: scale(1.015); }
+.poster .shade { position: absolute; inset: 0; background: linear-gradient(180deg, transparent 45%, color-mix(in srgb, var(--screen) 78%, transparent)); }
+.poster .play { position: absolute; left: 50%; top: 50%; width: 82px; height: 82px; margin: -41px 0 0 -41px; border-radius: 50%; background: var(--lime); color: var(--on-lime);
+  display: grid; place-items: center; box-shadow: 0 0 0 12px color-mix(in srgb, var(--lime) 22%, transparent); transition: box-shadow .3s; }
+.poster:hover .play { box-shadow: 0 0 0 18px color-mix(in srgb, var(--lime) 18%, transparent); }
+.poster .play::before { content: ""; border-style: solid; border-width: 13px 0 13px 21px; border-color: transparent transparent transparent currentColor; margin-left: 6px; }
+.poster .watch { position: absolute; left: 22px; bottom: 18px; right: 22px; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 14px; }
+.poster .watch strong { font: 640 clamp(17px, 2vw, 21px)/1.3 var(--f-display); }
+.poster .watch span { font: 400 12px/1.5 var(--f-mono); letter-spacing: .03em; opacity: .78; }
+.below { margin-top: 16px; color: var(--ink-2); max-width: 62ch; }
+
+/* chapters: the tagline splits the product in two */
+.chapter { padding-block: clamp(72px, 10vw, 128px) 0; }
+.chapter-head { border-top: 1px solid var(--ink); padding-top: 18px; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); gap: 12px 40px; align-items: baseline; }
+.chapter-head .eyebrow { grid-column: 1 / -1; }
+.chapter-head .big { margin: 0; color: var(--ink); font: 700 clamp(34px, 5.5vw, 64px)/1.05 var(--f-display); font-stretch: 106%; letter-spacing: -.02em; }
+.chapter-head p { color: var(--ink-2); max-width: 46ch; }
+
+.feature { padding-block: clamp(48px, 6vw, 72px) 0; }
+.feature h2 { margin-bottom: 18px; max-width: 30ch; }
+.cap { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); gap: 10px 40px; margin-top: 16px; align-items: start; }
+.cap p { color: var(--ink-2); max-width: 60ch; }
+.cap .slate { margin: 5px 0 0; }
+.pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px; }
+.pair figcaption p { margin-top: 12px; color: var(--ink-2); font-size: 15.5px; }
+.pair figcaption .slate { margin-top: 8px; }
+.strip { margin-top: 28px; }
+.num { font-variant-numeric: tabular-nums; color: var(--ink); font-weight: 600; }
+
+/* method */
+.steps { list-style: none; margin: 34px 0 0; padding: 0; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 0; counter-reset: step; }
+.steps li { position: relative; padding: 30px 22px 0 0; min-width: 0; }
+.steps li::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 1px; background: var(--rule); }
+.steps li::after { content: ""; position: absolute; left: 0; top: -4px; width: 9px; height: 9px; border-radius: 50%; background: var(--paper); border: 1.5px solid var(--ink); }
+.steps li:last-child::after { background: var(--lime); border-color: var(--lime-ink); }
+.steps .idx { font: 500 12px/1 var(--f-mono); letter-spacing: .06em; color: var(--lime-ink); }
+.steps h3 { margin: 10px 0 8px; font: 640 17.5px/1.35 var(--f-display); }
+.steps p { font-size: 14.5px; line-height: 1.65; color: var(--ink-2); }
+.chip { display: inline-block; margin-top: 12px; padding: 4px 9px; border-radius: 6px; background: var(--chip); font: 400 11.5px/1.45 var(--f-mono); letter-spacing: .02em; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.output { margin-top: 44px; }
+
+/* limits */
+.limits { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 15.5px; }
+.limits th, .limits td { text-align: left; vertical-align: top; padding: 14px 0; border-bottom: 1px solid var(--rule); }
+.limits th { width: 42%; padding-right: 20px; font-weight: 600; }
+.limits td { color: var(--ink-2); }
+.limits .tag { display: inline-block; margin-right: 8px; padding: 1px 8px; border-radius: 999px; border: 1px solid var(--lime-ink); color: var(--lime-ink); font: 500 12px/1.6 var(--f-body); white-space: nowrap; }
+
+/* citation */
+.bibwrap { position: relative; margin-top: 4px; }
+.bib { margin: 0; padding: 20px 22px; background: var(--chip); border-radius: 10px; font: 400 13px/1.7 var(--f-mono); color: var(--ink-2); overflow-x: auto; white-space: pre; }
+.copy { position: absolute; top: 10px; right: 10px; appearance: none; border: 1px solid var(--rule); background: var(--paper); color: var(--ink); border-radius: 8px; padding: 6px 12px; font: 600 12.5px/1 var(--f-body); cursor: pointer; }
+.copy .done { display: none; }
+.copy.ok .label { display: none; }
+.copy.ok .done { display: inline; }
+.thanks p { font-size: 15px; color: var(--ink-2); }
+footer { max-width: var(--stage); margin: clamp(72px, 9vw, 112px) auto 0; padding-top: 18px; border-top: 1px solid var(--rule); display: flex; flex-wrap: wrap; gap: 8px 24px; justify-content: space-between; font: 400 12px/1.6 var(--f-mono); color: var(--ink-3); letter-spacing: .03em; }
+
+@media (max-width: 860px) {
+  .steps { grid-template-columns: minmax(0, 1fr); }
+  .steps li { padding: 0 0 26px 28px; }
+  .steps li::before { left: 4px; right: auto; top: 10px; bottom: 0; width: 1px; height: auto; }
+  .steps li:last-child::before { display: none; }
+  .steps li::after { top: 4px; }
+  .chapter-head { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 720px) {
+  body { font-size: 16px; }
+  .cap, .pair { grid-template-columns: minmax(0, 1fr); }
+  .pair { gap: 34px; }
+  .phases { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .phase { font-size: 12px; }
+  .spec { grid-template-columns: minmax(0, 1fr); }
+  .spec dt { padding-bottom: 0; border-bottom: 0; }
+  .spec dd { padding-top: 2px; }
+  .limits th, .limits td { display: block; width: auto; padding: 0; border: 0; }
+  .limits tr { display: block; padding: 14px 0; border-bottom: 1px solid var(--rule); }
+  .limits td { margin-top: 4px; }
+  .poster .play { width: 64px; height: 64px; margin: -32px 0 0 -32px; }
+  .poster .watch { left: 14px; bottom: 12px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; }
+  .poster:hover img { transform: none; }
+}
+
+:root { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+.langs a { color: var(--ink-3); font: 600 13px/1 var(--f-body); padding: 7px 12px; border-radius: 999px; text-decoration: none; }
+.langs a[aria-current="page"] { background: var(--ink); color: var(--paper); }
+.poster { aspect-ratio: 16 / 9; }
+.poster img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.player { aspect-ratio: 16 / 9; }
+.player iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+.below a { color: var(--lime-ink); font-weight: 600; text-decoration: none; white-space: nowrap; }
+.below a:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+<div class="bar">
+  <a class="mark" href="/en/" id="top">Pingpong3D</a>
+  <div class="langs" role="group" aria-label="Language / 语言"><a href="/" hreflang="zh-CN" lang="zh-CN">中文</a><a href="/en/" hreflang="en" lang="en" aria-current="page">EN</a></div>
+</div>
+
+<header class="mast">
+  <p class="eyebrow">Table tennis · single-camera 3D · motion and tactics</p>
+  <h1>
+    
+    <span class="brand">Pingpong3D</span>: Whole Table Tennis Matches in 3D from a Single Camera
+  </h1>
+  <p class="tagline">Understand the pros. Understand yourself.</p>
+  <p class="byline">Mingyang Zhong</p>
+  <p class="org">Pingpong3D · October 2026</p>
+  <nav class="links">
+    <a class="pill pill--primary" href="#video"><i class="tri" aria-hidden="true"></i>Video</a>
+    <a class="pill" href="#results">Results</a>
+    <a class="pill" href="#method">Method</a>
+    <a class="pill" href="#cite">BibTeX</a>
+  </nav>
+</header>
+
+<figure class="stage hero">
+  <div class="screen">
+    <video id="heroVid" width="1600" height="676" muted loop playsinline preload="none" data-src="/media/hero.mp4" poster="/media/hero.jpg" aria-label="A Paris 2024 broadcast rebuilt in 3D, then viewed from the umpire&#x27;s seat and across the table"></video>
+    <button class="vbtn" type="button" aria-label="Play or pause"></button>
+  </div>
+  <div class="phases">
+    <button class="phase on" type="button" data-t="0">Broadcast + 2D skeleton</button>
+    <button class="phase" type="button" data-t="3.9">Same camera, in 3D</button>
+    <button class="phase" type="button" data-t="6.3">Swing to the umpire's seat, then across</button>
+  </div>
+  <figcaption class="slate">Paris 2024 · men's singles quarter-final · Fan Zhendong vs Tomokazu Harimoto · point 100</figcaption>
+</figure>
+
+<section class="read" id="abstract">
+  <h2>Abstract</h2>
+  
+  
+  <p>Pingpong3D turns an ordinary table tennis video into a match you can view from any angle. It needs only one camera: a TV broadcast, or a phone set up by the court. Using the table as a ruler, it calibrates the camera on every frame, rebuilds both players' full-body motion and the flight of the ball, then splits the match into points and strokes: who served, and where every ball landed.</p>
+  <p>On top of that, professional matches become a searchable rally library, and your own strokes can be lined up against a pro's at the moment of contact, with plain advice on what to fix first and by how much. Where the footage cannot support a measurement, it says “not judged” instead of guessing.</p>
+  <dl class="spec">
+    <dt>Input</dt>
+    <dd>Video from one camera · broadcast 25–30 fps · phone 30–60 fps</dd>
+    <dt>Players</dt>
+    <dd>SMPL meshes and 41 keypoints for both players, in metres</dd>
+    <dt>Ball</dt>
+    <dd>Ball flight, hit and bounce times, the landing point of every stroke</dd>
+    <dt>Match</dt>
+    <dd>Rallies split into strokes, the server, a searchable rally library</dd>
+  </dl>
+</section>
+
+<section class="stage" id="video">
+  <div class="head"><h2>Video</h2></div>
+  <a class="poster screen" href="https://www.youtube.com/watch?v=5e6fQDLpLy0" data-yt="5e6fQDLpLy0" data-title="Pingpong3D: Whole Table Tennis Matches in 3D from a Single Camera" aria-label="Play the demo video">
+    <img src="/media/film.jpg" width="1600" height="826" alt="">
+    <span class="shade" aria-hidden="true"></span>
+    <span class="play" aria-hidden="true"></span>
+    <span class="watch">
+      <strong>Watch on YouTube ↗</strong>
+      <span>2021 National Games · Fan Zhendong vs Ma Long · 3D slow motion</span>
+    </span>
+  </a>
+  <p class="below">A few minutes through every feature: match analysis, tactics review, the power guide, stroke comparison and match self-review. Every clip on this page is taken from it. <a href="https://www.youtube.com/watch?v=5e6fQDLpLy0" target="_blank" rel="noopener">Open on YouTube ↗</a></p>
+</section>
+
+<div class="stage" id="results">
+
+  <div class="chapter">
+    <div class="chapter-head">
+      <p class="eyebrow">Professional matches</p>
+      <p class="big">Understand the pros</p>
+      <p>Both players, every stroke and every landing point in a single broadcast feed, each one ready to study on its own.</p>
+    </div>
+
+    <article class="feature" id="match">
+      <h2>Match analysis: video and 3D in sync, frame by frame</h2>
+      <div class="screen">
+        <video width="1600" height="566" muted loop playsinline preload="none" poster="/media/match_en.jpg" data-src="/media/match_en.mp4" aria-label="Match analysis: video on the left, 3D on the right, switching to the umpire&#x27;s view, behind the player and an orbit"></video>
+        <button class="vbtn" type="button" aria-label="Play or pause"></button>
+      </div>
+      <div class="cap">
+        <p>Video on the left, 3D on the right. Jump to the umpire's seat to check positioning, stand behind Fan to see how he adjusts, or follow him all the way around.</p>
+        <p class="slate">Rally 100 · 54:39 in source · umpire → behind → orbit</p>
+      </div>
+    </article>
+
+    <article class="feature" id="tactics">
+      <h2>Whole-match tactics review</h2>
+      <div class="screen">
+        <video width="1440" height="646" muted loop playsinline preload="none" poster="/media/tactics_en.jpg" data-src="/media/tactics_en.mp4" aria-label="Tactics review: filtering rallies by where the serve landed"></video>
+        <button class="vbtn" type="button" aria-label="Play or pause"></button>
+      </div>
+      <div class="cap">
+        <p>All <span class="num">123</span> rallies of the match on one page. Curious how Fan's long serves to the backhand worked out? Two clicks and there they are. If it can't tell where a ball landed, it says “not judged” instead of guessing.</p>
+        <p class="slate">Paris 2024 · full quarter-final · serve landing on a 3 × 3 grid</p>
+      </div>
+    </article>
+
+    <article class="feature" id="power">
+      <h2>Power guide: how force travels from the legs to the hand</h2>
+      <div class="screen">
+        <video width="1440" height="668" muted loop playsinline preload="none" poster="/media/power_en.jpg" data-src="/media/power_en.mp4" aria-label="Power guide: the body coloured by phase, warm for driving and cool for braking"></video>
+        <button class="vbtn" type="button" aria-label="Play or pause"></button>
+      </div>
+      <div class="cap">
+        <p>Each stroke is split into backswing, drive, contact and follow-through. Here Fan pushes with his legs and turns his hips to send energy up through the pelvis. Warm colours mean the body is driving, cool colours mean it is braking, painted right on the body.</p>
+        <p class="slate">Fan Zhendong · stroke 11 · net joint torques and power</p>
+      </div>
+    </article>
+  </div>
+
+  <div class="chapter">
+    <div class="chapter-head">
+      <p class="eyebrow">Your own footage</p>
+      <p class="big">Understand yourself</p>
+      <p>Film a practice session or a whole match, then line it up against the pros at the moment of contact.</p>
+    </div>
+
+    <article class="feature" id="compare">
+      <h2>Compare with the pros</h2>
+      <div class="pair">
+        <figure>
+          <div class="screen fit">
+            <img src="/media/stance_en.jpg" width="1280" height="724" alt="" role="img" aria-label="Stance chart: Ma Long 1.38 leg lengths, you 0.62">
+          </div>
+          <figcaption>
+            <p>Stance too narrow: before contact Ma Long's feet are <span class="num">1.38</span> leg lengths apart, yours <span class="num">0.62</span>. For your leg length, that means about <span class="num">112 cm</span>.</p>
+            <p class="slate">Ma Long · attacking receive vs your forehand</p>
+          </figcaption>
+        </figure>
+        <figure>
+          <div class="screen fit">
+            <video width="1160" height="644" muted loop playsinline preload="none" data-src="/media/overlay.mp4" poster="/media/overlay.jpg" aria-label="Your backhand and Ma Long&#x27;s, aligned at contact and overlaid"></video>
+            <button class="vbtn" type="button" aria-label="Play or pause"></button>
+          </div>
+          <figcaption>
+            <p>Line both up at contact and overlay them, and the difference is obvious. It picks the three things most worth fixing and says how, and why.</p>
+            <p class="slate">Ma Long · National Games backhand vs your match backhand</p>
+          </figcaption>
+        </figure>
+      </div>
+      <figure class="strip">
+        <div class="screen">
+          <video width="1440" height="446" muted loop playsinline preload="none" poster="/media/elbow_en.jpg" data-src="/media/elbow_en.mp4" aria-label="Backhand elbow backswing as motion trails seen from above: Ma Long and you"></video>
+          <button class="vbtn" type="button" aria-label="Play or pause"></button>
+        </div>
+        <div class="cap">
+          <p>The backhand elbow backswing, compared as motion trails seen from above: at the end of the backswing, how far the elbow sits behind and outside the shoulder.</p>
+          <p class="slate">Elbow backswing · top view · Ma Long / you</p>
+        </div>
+      </figure>
+    </article>
+
+    <article class="feature" id="review">
+      <h2>Match self-review: a phone by the court, one whole match</h2>
+      <div class="screen">
+        <video width="1600" height="442" muted loop playsinline preload="none" poster="/media/sr3d_en.jpg" data-src="/media/sr3d_en.mp4" aria-label="Self-review: your stroke and a similar pro return, aligned at contact and played together in 3D"></video>
+        <button class="vbtn" type="button" aria-label="Play or pause"></button>
+      </div>
+      <div class="cap">
+        <p>It splits out every point, works out where each ball landed, then finds pro balls that landed nearby. On this return you played to the middle: of <span class="num">11</span> similar pro returns, <span class="num">8</span> went the same way. When you get it right, it says so.</p>
+        <p class="slate">Your match · point 3, stroke 2 (return) vs Fan Zhendong vs Ma Long · point 18</p>
+      </div>
+    </article>
+  </div>
+</div>
+
+<section class="stage" id="method">
+  <div class="head">
+    <h2>How it works</h2>
+    <p class="lead">Everything comes from one camera view, in five steps.</p>
+  </div>
+  <ol class="steps">
+    <li>
+      <span class="idx">01</span>
+      <h3>The table is the ruler</h3>
+      <p>Every frame re-calibrates the camera from the table edges, so it keeps up with broadcast pans.</p>
+      <span class="chip">2.74 × 1.525 m · median edge error 0.49 px</span>
+    </li>
+    <li>
+      <span class="idx">02</span>
+      <h3>Both players in 3D</h3>
+      <p>NLF rebuilds the full body on every frame, with the racket arm fine-tuned for motion blur. Bodies are placed in a metric scene by the table, and limbs that jump for a frame or two are repaired.</p>
+      <span class="chip">SMPL mesh · 41 keypoints</span>
+    </li>
+    <li>
+      <span class="idx">03</span>
+      <h3>The ball and every sound</h3>
+      <p>It finds the ball through motion blur, times each hit and bounce from the audio, and fits a physical flight to locate the landing.</p>
+      <span class="chip">ball Ø 40 mm</span>
+    </li>
+    <li>
+      <span class="idx">04</span>
+      <h3>Rally library</h3>
+      <p>The match is split into points and strokes: who served, which stroke, where it landed. Pro matches can be searched on all of these.</p>
+      <span class="chip">Paris QF · 123 rallies</span>
+    </li>
+    <li>
+      <span class="idx">05</span>
+      <h3>Advice you can act on</h3>
+      <p>Match analysis, tactics review, power guide, stroke comparison and self-review, in Chinese or English.</p>
+      <span class="chip">中文 / English</span>
+    </li>
+  </ol>
+  <figure class="output">
+    <div class="screen">
+      <video width="1440" height="742" muted loop playsinline preload="none" data-src="/media/orbit.mp4" poster="/media/orbit.jpg" aria-label="Fan Zhendong vs Ma Long at the 2021 National Games, a slow 3D orbit"></video>
+      <button class="vbtn" type="button" aria-label="Play or pause"></button>
+    </div>
+    <div class="cap">
+      <p>The output: a match in 3D you can turn any way you like.</p>
+      <p class="slate">2021 National Games · Fan Zhendong vs Ma Long</p>
+    </div>
+  </figure>
+</section>
+
+<section class="read" id="limits">
+  <h2>What it won't guess</h2>
+  <p class="lead">A single camera can't see everything. These stay out of the numbers:</p>
+  <table class="limits">
+    <tbody>
+      <tr><th>Landing spots it can't see</th>
+        <td><span class="tag">not judged</span>marked as such on the page</td></tr>
+      <tr><th>Racket face, the wrist during motion blur</th>
+        <td><span class="tag">not judged</span>still under research</td></tr>
+      <tr><th>Ball spin</th>
+        <td><span class="tag">not judged</span></td></tr>
+      <tr><th>Leg joint torques</th>
+        <td>Not computed: they need ground-reaction forces that video can't provide. Only knee angles and the direction energy flows into the upper body.</td></tr>
+      <tr><th>Timing order at 30 fps</th>
+        <td>Reference only; leg timing is given at 60 fps and above.</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section class="read" id="cite">
+  <h2>Citation</h2>
+  <div class="bibwrap">
+    <pre class="bib" id="bib">@misc{zhong2026pingpong3d,
+  title  = {Pingpong3D: Whole Table Tennis Matches in 3D from a Single Camera},
+  author = {Zhong, Mingyang},
+  year   = {2026},
+  note   = {Project page and demo video},
+  url    = {https://www.youtube.com/watch?v=5e6fQDLpLy0}
+}</pre>
+    <button class="copy" type="button" id="copyBib"><span class="label">Copy</span><span class="done">Copied</span></button>
+  </div>
+</section>
+
+<section class="read thanks" id="thanks">
+  <h2>Acknowledgements</h2>
+  
+  
+  <p>3D bodies come from NLF; body models from SMPL and Anny; ball detection from BlurBall and Uplifting Table Tennis (SegFormer++); person boxes from torchvision's Faster R-CNN. NLF and SMPL weights are licensed for non-commercial research only, and this project is currently a non-commercial research demo.</p>
+  <p>Match footage comes from public broadcasts of the Paris 2024 Olympics, the 2021 National Games and others. All rights belong to the original broadcasters; it is used here only for technical demonstration.</p>
+</section>
+
+<footer>
+  <span>Pingpong3D · 2026</span>
+  <span>Understand the pros. Understand yourself.</span>
+</footer>
+
+
+<script>
+(function () {
+  var reduce = !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+  var vids = Array.prototype.slice.call(document.querySelectorAll('video[data-src]'));
+  function load(v) { if (!v.getAttribute('src')) v.src = v.getAttribute('data-src'); }
+  function start(v) { load(v); var p = v.play(); if (p && p.catch) p.catch(function () {}); }
+  function auto(v) { if (!reduce && v.getAttribute('data-user') !== 'paused') start(v); }
+  var io = ('IntersectionObserver' in window) ? new IntersectionObserver(function (entries) {
+    entries.forEach(function (e) { if (e.isIntersecting) auto(e.target); else e.target.pause(); });
+  }, { threshold: 0.2 }) : null;
+  vids.forEach(function (v) { if (io) io.observe(v); else auto(v); });
+
+  Array.prototype.forEach.call(document.querySelectorAll('.vbtn'), function (b) {
+    var v = b.parentNode.querySelector('video');
+    b.addEventListener('click', function () {
+      if (v.paused) { v.removeAttribute('data-user'); start(v); }
+      else { v.pause(); v.setAttribute('data-user', 'paused'); }
+    });
+    v.addEventListener('play', function () { b.classList.add('is-playing'); });
+    v.addEventListener('pause', function () { b.classList.remove('is-playing'); });
+  });
+
+  var hero = document.getElementById('heroVid');
+  var phases = Array.prototype.slice.call(document.querySelectorAll('.phase'));
+  var cuts = phases.map(function (p) { return parseFloat(p.getAttribute('data-t')); });
+  function tick() {
+    var t = hero.currentTime, d = hero.duration || 17.7;
+    phases.forEach(function (p, i) {
+      var a = cuts[i], b = i + 1 < cuts.length ? cuts[i + 1] : d;
+      p.style.setProperty('--p', Math.max(0, Math.min(1, (t - a) / (b - a))).toFixed(3));
+      p.classList.toggle('on', t >= a && t < b);
+    });
+  }
+  function frame() { tick(); if (!hero.paused) requestAnimationFrame(frame); }
+  hero.addEventListener('play', function () { requestAnimationFrame(frame); });
+  hero.addEventListener('seeked', tick);
+  phases.forEach(function (p, i) {
+    p.addEventListener('click', function () {
+      load(hero);
+      var go = function () { hero.currentTime = cuts[i] + 0.02; tick(); };
+      if (hero.readyState >= 1) go(); else hero.addEventListener('loadedmetadata', go, { once: true });
+      if (hero.paused && !reduce) { hero.removeAttribute('data-user'); start(hero); }
+    });
+  });
+
+  var yt = document.querySelector('[data-yt]');
+  if (yt) yt.addEventListener('click', function (e) {
+    e.preventDefault();
+    var box = document.createElement('div');
+    box.className = 'screen player';
+    var f = document.createElement('iframe');
+    f.src = 'https://www.youtube-nocookie.com/embed/' + yt.getAttribute('data-yt') + '?autoplay=1&rel=0&playsinline=1';
+    f.title = yt.getAttribute('data-title');
+    f.allow = 'autoplay; encrypted-media; picture-in-picture; fullscreen';
+    f.allowFullscreen = true;
+    f.referrerPolicy = 'strict-origin-when-cross-origin';
+    box.appendChild(f);
+    yt.parentNode.replaceChild(box, yt);
+  });
+
+  var copy = document.getElementById('copyBib');
+  var bib = document.getElementById('bib');
+  copy.addEventListener('click', function () {
+    function done() { copy.classList.add('ok'); setTimeout(function () { copy.classList.remove('ok'); }, 1600); }
+    function select() {
+      var r = document.createRange(); r.selectNodeContents(bib);
+      var s = window.getSelection(); s.removeAllRanges(); s.addRange(r);
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(bib.textContent).then(done, select);
+    else select();
+  });
+})();
+</script>
+</body>
+</html>
